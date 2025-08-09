@@ -1,0 +1,553 @@
+<html>
+<head>
+  <title>Steganography Online</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+  <link href="https://fonts.googleapis.com/css?family=Share+Tech+Mono" rel="stylesheet">
+</head>
+<body>
+  <div class="container hacker-ui">
+    <div class="page-header">
+      <h1 class="glow">>_ Steganography Tool</h1>
+      <p class="subtitle">// Hide and reveal secret messages in images</p>
+    </div>
+
+    <ul class="nav nav-tabs" id="tabs" data-tabs="tabs">
+      <li role="presentation" class="active"> <a href="#encode" data-toggle="tab"><span class="glyphicon glyphicon-lock"></span> Encode</a></li>
+      <li role="presentation"> <a href="#decode" data-toggle="tab"><span class="glyphicon glyphicon-eye-open"></span> Decode</a></li>
+    </ul>
+
+    <div id="my-tab-content" class="tab-content">
+      <div class="tab-pane active" id="encode">
+        <div>
+          <h2><span class="glyphicon glyphicon-console"></span> Encode message</h2>
+          <p class="alert alert-hacker">
+            > To encode a message into an image, choose the image you want to use, enter your text and hit the <strong>Encode</strong> button.<br/>
+            > Save the last image - it will contain your hidden message.<br/>
+            > Remember: the more text you want to hide, the larger the image must be.<br/>
+            > <span class="blink">_</span>
+          </p>
+          <form class="form">
+            <div class="form-group">
+              <label class="hacker-label">[1] Select image:</label>
+              <input class="form-control hacker-input" type="file" name="baseFile" onchange="previewEncodeImage()">
+            </div>
+
+            <div class="form-group">
+              <label class="hacker-label">[2] Enter secret message:</label>
+              <textarea class="form-control message hacker-textarea" rows="3" placeholder="Enter your message here..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <button class="encode btn btn-hacker pull-right" onclick="encodeMessage()">
+                <span class="glyphicon glyphicon-triangle-right"></span> Execute Encode
+              </button>
+            </div>
+          </form>
+          <div class="clearfix"></div>
+        </div>
+
+        <div class="error hacker-alert" style="display: none;"></div>
+        <div class="binary hacker-console" style="display: none;">
+          <h3><span class="glyphicon glyphicon-console"></span> Binary message payload:</h3>
+          <textarea class="form-control message hacker-console-text" style="word-wrap:break-word;" readonly>
+          </textarea>
+        </div>
+        <div class="images" style="display: none;">
+          <div class="original" style="display: none;">
+            <h3><span class="glyphicon glyphicon-picture"></span> Original Image</h3>
+            <canvas class="hacker-canvas"></canvas>
+          </div>
+          <div class="nulled" style="display: none;">
+            <h3><span class="glyphicon glyphicon-adjust"></span> Normalized Image</h3>
+            <canvas class="hacker-canvas"></canvas>
+          </div>
+          <div class="message" style="display: none;">
+            <h3><span class="glyphicon glyphicon-sunglasses"></span> Encoded Image (Right Click → Save As)</h3>
+            <canvas class="hacker-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="decode">
+        <div>
+          <h2><span class="glyphicon glyphicon-console"></span> Decode image</h2>
+          <p class="alert alert-hacker">
+            > To decode a hidden message from an image, choose an image and hit <strong>Decode</strong>.<br/>
+            > <span class="blink">_</span>
+          </p>
+          <form class="form">
+            <div class="form-group">
+              <label class="hacker-label">[1] Select encoded image:</label>
+              <input class="form-control hacker-input" type="file" name="decodeFile" onchange="previewDecodeImage()">
+            </div>
+            <div class="form-group">
+              <button class="decode btn btn-hacker pull-right" onclick="decodeMessage()">
+                <span class="glyphicon glyphicon-triangle-right"></span> Execute Decode
+              </button>
+            </div>
+          </form>
+          <div class="clearfix"></div>
+        </div>
+        <div class="binary-decode hacker-console" style="display: none;">
+          <h3><span class="glyphicon glyphicon-eye-open"></span> Extracted message:</h3>
+          <textarea class="form-control message hacker-console-text" style="word-wrap:break-word;" readonly>
+          </textarea>
+        </div>
+        <div class="decode" style="display: none;">
+          <h3><span class="glyphicon glyphicon-search"></span> Input Analysis</h3>
+          <canvas class="hacker-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <footer class="hacker-footer">
+      <div class="scanline"></div>
+      <p>>_ System ready</p>
+      <p>&copy; 2024 Steganography Tool v1.3.7 // <span id="ip-address">IP: 192.168.1.105</span></p>
+    </footer>
+  </div>
+
+  <style>
+    /* Base Hacker Theme */
+    body {
+      background-color: #0a0a0a;
+      color: #0f0;
+      font-family: 'Share Tech Mono', monospace;
+      padding-top: 20px;
+      padding-bottom: 20px;
+    }
+    
+    .hacker-ui {
+      background-color: #111;
+      border: 1px solid #333;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Header Styles */
+    .page-header {
+      border-bottom: 1px solid #333;
+      position: relative;
+    }
+    
+    .page-header h1 {
+      color: #0f0;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    
+    .subtitle {
+      color: #0a0;
+      font-style: italic;
+      margin-top: -5px;
+    }
+    
+    /* Glow Effect */
+    .glow {
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes glow {
+      from {
+        text-shadow: 0 0 5px #0f0, 0 0 10px #0f0;
+      }
+      to {
+        text-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
+      }
+    }
+    
+    /* Blinking cursor */
+    .blink {
+      animation: blink 1s step-end infinite;
+    }
+    
+    @keyframes blink {
+      from, to { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    
+    /* Tab Styles */
+    .nav-tabs {
+      border-bottom: 1px solid #333;
+    }
+    
+    .nav-tabs>li>a {
+      color: #0a0;
+      background-color: #111;
+      border: 1px solid #333;
+      border-bottom: none;
+      margin-right: 5px;
+    }
+    
+    .nav-tabs>li>a:hover {
+      background-color: #222;
+      border-color: #333;
+      color: #0f0;
+    }
+    
+    .nav-tabs>li.active>a, 
+    .nav-tabs>li.active>a:hover, 
+    .nav-tabs>li.active>a:focus {
+      color: #0f0;
+      background-color: #222;
+      border: 1px solid #333;
+      border-bottom-color: transparent;
+    }
+    
+    /* Form Elements */
+    .hacker-label {
+      color: #0a0;
+      display: block;
+      margin-bottom: 5px;
+    }
+    
+    .hacker-input {
+      background-color: #111;
+      border: 1px solid #333;
+      color: #0f0;
+      border-radius: 0;
+    }
+    
+    .hacker-input:focus {
+      border-color: #0f0;
+      box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+      background-color: #111;
+      color: #0f0;
+    }
+    
+    .hacker-textarea {
+      background-color: #111;
+      border: 1px solid #333;
+      color: #0f0;
+      font-family: 'Share Tech Mono', monospace;
+      border-radius: 0;
+      resize: vertical;
+    }
+    
+    /* Button Styles */
+    .btn-hacker {
+      background-color: #111;
+      color: #0f0;
+      border: 1px solid #333;
+      border-radius: 0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+    }
+    
+    .btn-hacker:hover {
+      background-color: #0f0;
+      color: #000;
+      border-color: #0f0;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+    }
+    
+    /* Alert Boxes */
+    .alert-hacker {
+      background-color: rgba(0, 20, 0, 0.5);
+      border: 1px solid #0a0;
+      color: #0f0;
+      border-radius: 0;
+    }
+    
+    .hacker-alert {
+      background-color: rgba(40, 0, 0, 0.5);
+      border: 1px solid #f00;
+      color: #f55;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 0;
+    }
+    
+    /* Console Styles */
+    .hacker-console {
+      background-color: #000;
+      border: 1px solid #333;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .hacker-console-text {
+      background-color: #000;
+      color: #0f0;
+      border: none;
+      font-family: 'Share Tech Mono', monospace;
+      min-height: 100px;
+    }
+    
+    /* Canvas Styles */
+    .hacker-canvas {
+      border: 1px solid #333;
+      background-color: #000;
+      margin-bottom: 20px;
+      box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+    }
+    
+    /* Footer Styles */
+    .hacker-footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #333;
+      color: #0a0;
+      position: relative;
+    }
+    
+    .hacker-footer p {
+      margin-bottom: 5px;
+    }
+    
+    /* Scanline effect */
+    .scanline {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        to bottom,
+        rgba(0, 255, 0, 0.1) 0%,
+        rgba(0, 255, 0, 0) 10%
+      );
+      background-size: 100% 8px;
+      pointer-events: none;
+      animation: scanline 8s linear infinite;
+    }
+    
+    @keyframes scanline {
+      0% {
+        transform: translateY(-100%);
+      }
+      100% {
+        transform: translateY(100%);
+      }
+    }
+    
+    /* IP Address Animation */
+    #ip-address {
+      display: inline-block;
+      position: relative;
+    }
+    
+    #ip-address::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: -10px;
+      width: 8px;
+      height: 16px;
+      background-color: #0f0;
+      animation: cursor-blink 1s step-end infinite;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .hacker-ui {
+        padding: 10px;
+      }
+      
+      .page-header h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+  <script>
+    // Generate random IP for footer
+    function randomIP() {
+      return "IP: " + Math.floor(Math.random() * 255) + "." + 
+             Math.floor(Math.random() * 255) + "." + 
+             Math.floor(Math.random() * 255) + "." + 
+             Math.floor(Math.random() * 255);
+    }
+    
+    document.getElementById('ip-address').textContent = randomIP();
+    
+    // Original functions with small UI enhancements
+    $('button.encode, button.decode').click(function(event) {
+      event.preventDefault();
+      $(this).blur();
+    });
+
+    function previewDecodeImage() {
+      var file = document.querySelector('input[name=decodeFile]').files[0];
+
+      previewImage(file, ".decode canvas", function() {
+        $(".decode").fadeIn();
+      });
+    }
+
+    function previewEncodeImage() {
+      var file = document.querySelector("input[name=baseFile]").files[0];
+
+      $(".images .nulled").hide();
+      $(".images .message").hide();
+
+      previewImage(file, ".original canvas", function() {
+        $(".images .original").fadeIn();
+        $(".images").fadeIn();
+      });
+    }
+
+    function previewImage(file, canvasSelector, callback) {
+      var reader = new FileReader();
+      var image = new Image;
+      var $canvas = $(canvasSelector);
+      var context = $canvas[0].getContext('2d');
+
+      if (file) {
+        reader.readAsDataURL(file);
+      }
+
+      reader.onloadend = function () {
+        image.src = URL.createObjectURL(file);
+
+        image.onload = function() {
+          $canvas.prop({
+            'width': image.width,
+            'height': image.height
+          });
+
+          context.drawImage(image, 0, 0);
+
+          callback();
+        }
+      }
+    }
+
+    function encodeMessage() {
+      $(".error").hide();
+      $(".binary").hide();
+
+      var text = $("textarea.message").val();
+
+      var $originalCanvas = $('.original canvas');
+      var $nulledCanvas = $('.nulled canvas');
+      var $messageCanvas = $('.message canvas');
+
+      var originalContext = $originalCanvas[0].getContext("2d");
+      var nulledContext = $nulledCanvas[0].getContext("2d");
+      var messageContext = $messageCanvas[0].getContext("2d");
+
+      var width = $originalCanvas[0].width;
+      var height = $originalCanvas[0].height;
+
+      // Check if the image is big enough to hide the message
+      if ((text.length * 8) > (width * height * 3)) {
+        $(".error")
+          .text("ERROR: Text too long for chosen image. Need larger image.")
+          .fadeIn();
+
+        return;
+      }
+
+      $nulledCanvas.prop({
+        'width': width,
+        'height': height
+      });
+
+      $messageCanvas.prop({
+        'width': width,
+        'height': height
+      });
+
+      // Normalize the original image and draw it
+      var original = originalContext.getImageData(0, 0, width, height);
+      var pixel = original.data;
+      for (var i = 0, n = pixel.length; i < n; i += 4) {
+        for (var offset =0; offset < 3; offset ++) {
+          if(pixel[i + offset] %2 != 0) {
+            pixel[i + offset]--;
+          }
+        }
+      }
+      nulledContext.putImageData(original, 0, 0);
+
+      // Convert the message to a binary string
+      var binaryMessage = "";
+      for (i = 0; i < text.length; i++) {
+        var binaryChar = text[i].charCodeAt(0).toString(2);
+
+        // Pad with 0 until the binaryChar has a lenght of 8 (1 Byte)
+        while(binaryChar.length < 8) {
+          binaryChar = "0" + binaryChar;
+        }
+
+        binaryMessage += binaryChar;
+      }
+      $('.binary textarea').text(binaryMessage);
+
+      // Apply the binary string to the image and draw it
+      var message = nulledContext.getImageData(0, 0, width, height);
+      pixel = message.data;
+      counter = 0;
+      for (var i = 0, n = pixel.length; i < n; i += 4) {
+        for (var offset =0; offset < 3; offset ++) {
+          if (counter < binaryMessage.length) {
+            pixel[i + offset] += parseInt(binaryMessage[counter]);
+            counter++;
+          }
+          else {
+            break;
+          }
+        }
+      }
+      messageContext.putImageData(message, 0, 0);
+
+      $(".binary").fadeIn();
+      $(".images .nulled").fadeIn();
+      $(".images .message").fadeIn();
+      
+      // Add success effect
+      $(".images .message h3").addClass("glow");
+      setTimeout(function() {
+        $(".images .message h3").removeClass("glow");
+      }, 2000);
+    };
+
+    function decodeMessage() {
+      var $originalCanvas = $('.decode canvas');
+      var originalContext = $originalCanvas[0].getContext("2d");
+
+      var original = originalContext.getImageData(0, 0, $originalCanvas.width(), $originalCanvas.height());
+      var binaryMessage = "";
+      var pixel = original.data;
+      for (var i = 0, n = pixel.length; i < n; i += 4) {
+        for (var offset =0; offset < 3; offset ++) {
+          var value = 0;
+          if(pixel[i + offset] %2 != 0) {
+            value = 1;
+          }
+
+          binaryMessage += value;
+        }
+      }
+
+      var output = "";
+      for (var i = 0; i < binaryMessage.length; i += 8) {
+        var c = 0;
+        for (var j = 0; j < 8; j++) {
+          c <<= 1;
+          c |= parseInt(binaryMessage[i + j]);
+        }
+
+        output += String.fromCharCode(c);
+      }
+
+      $('.binary-decode textarea').text(output);
+      $('.binary-decode').fadeIn();
+      
+      // Add success effect
+      $(".binary-decode h3").addClass("glow");
+      setTimeout(function() {
+        $(".binary-decode h3").removeClass("glow");
+      }, 2000);
+    };
+  </script>
+</body>
+</html>
